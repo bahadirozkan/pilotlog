@@ -1,4 +1,5 @@
 import csv
+
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
@@ -7,8 +8,10 @@ from rest_framework import status
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from .models import Aircraft, Airfield, BaseModel, Flight, Pilot
 from .serializers import ImportDataSerializer, getGenericSerializer
+
 
 def import_view(request):
     """view for importing the json file"""
@@ -27,9 +30,9 @@ class ImportDataView(APIView):
             file = serializer.validated_data['file']
             return self.import_data(request, file)
         else:
-            return Response(serializer.errors, 
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
-        
+
     def create(self, validated_data, model_arg):
         """
         A function that creates model objects
@@ -45,7 +48,7 @@ class ImportDataView(APIView):
         Returns the fields of the model that is sent
         """
         model_fields = set([field.name for field in model._meta.fields])
-        selected_fields = {key: meta_fields[key] for key in meta_fields 
+        selected_fields = {key: meta_fields[key] for key in meta_fields
                            if key in model_fields}
         return selected_fields
 
@@ -69,7 +72,7 @@ class ImportDataView(APIView):
                 elif table == 'flight':
                     model = Flight
                 elif table == 'pilot':
-                    model = Pilot 
+                    model = Pilot
                 else:
                     model = BaseModel
                 # Get the Dynamic Serializer according to the model
@@ -80,7 +83,7 @@ class ImportDataView(APIView):
                 if model_serializer.is_valid():
                     model_serializer.save()
                 else:
-                    return Response(model_serializer.errors, 
+                    return Response(model_serializer.errors,
                                     status=status.HTTP_400_BAD_REQUEST)
 
             return Response({"message": "Imported data successfully."},
@@ -104,27 +107,27 @@ class ExportDataView(APIView):
         # Write the title of the Logbook on the first line
         csv_writer.writerow(['ForeFlight Logbook Import'])
         csv_writer.writerow(['Aircraft Table'])
-        
+
         # Aircraft and Flight table titles and fields that will be exported
-        header_title = ['AircraftID', 'Make', 'Model', 'Category', 
+        header_title = ['AircraftID', 'Make', 'Model', 'Category',
                         'Class', 'Complex', 'HighPerf']
-        header_row = ['guid', 'Make', 'Model', 'Category', 'Class', 
-                      'Complex', 'HighPerf'] 
+        header_row = ['guid', 'Make', 'Model', 'Category', 'Class',
+                      'Complex', 'HighPerf']
         csv_writer.writerow(header_title)
 
         # Query all models and write the data to the CSV file
         for aircraft in Aircraft.objects.all():
-            csv_writer.writerow([getattr(aircraft, field) 
+            csv_writer.writerow([getattr(aircraft, field)
                                  for field in header_row[0:7]])
-        
+
         csv_writer.writerow(['Flights Table'])
-        footer_title = ['Date', 'AircraftID', 'Route', 'TimeOut', 
-                        'TimeIn', 'TotalTime', 'Approach1', 'Approach2', 
+        footer_title = ['Date', 'AircraftID', 'Route', 'TimeOut',
+                        'TimeIn', 'TotalTime', 'Approach1', 'Approach2',
                         'Approach3', 'Person1', 'Person2']
         csv_writer.writerow(footer_title)
 
         # Merges Flight, Airfield and Pilot data on Flight, key = "guid"
-        # Can be commented out after first run, if the data is persistent. 
+        # Can be commented out after first run, if the data is persistent.
         # It modifies the flight model
         Flight.objects.merge_pilot_airfield_data()
 
@@ -155,12 +158,8 @@ class ExportDataView(APIView):
             else:
                 pilot_name = pilot_email = None
 
-            csv_writer.writerow([date_local, guid, route, dep_time_utc, 
-                                 arr_time_utc, min_total, af_name, city, 
+            csv_writer.writerow([date_local, guid, route, dep_time_utc,
+                                 arr_time_utc, min_total, af_name, city,
                                  notes, pilot_name, pilot_email])
-                
+
         return response
-    
-   
-
-
