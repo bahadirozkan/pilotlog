@@ -17,6 +17,7 @@ def import_view(request):
     """view for importing the json file"""
     return render(request, 'import_data.html')
 
+
 @method_decorator(csrf_exempt, name='dispatch')
 class ImportDataView(APIView):
     def post(self, request, *args, **kwargs):
@@ -39,7 +40,6 @@ class ImportDataView(APIView):
         that are dynamically read from the imported
         file
         """
-        # Select only specific fields from the meta dictionary
         selected_fields = self.get_selected_fields(validated_data, model_arg)
         return model_arg.objects.create(**selected_fields)
 
@@ -61,25 +61,18 @@ class ImportDataView(APIView):
         try:
             data = JSONParser().parse(file)
             for entry in data:
-                # Add meta dict to the row
                 entry.update(entry['meta'])
-                # Dynamically get the model from each row
                 table = entry['table']
-                if table == 'aircraft':
-                    model = Aircraft
-                elif table == 'airfield':
-                    model = Airfield
-                elif table == 'flight':
-                    model = Flight
-                elif table == 'pilot':
-                    model = Pilot
-                else:
-                    model = BaseModel
-                # Get the Dynamic Serializer according to the model
+                model = {
+                    'aircraft': Aircraft,
+                    'airfield': Airfield,
+                    'flight': Flight,
+                    'pilot': Pilot,
+                }.get(table, BaseModel)
+
                 generic_serializer = getGenericSerializer(model)
-                # Feed the data to the serializer
                 model_serializer = generic_serializer(data={**entry})
-                # if valid save, else throw error
+
                 if model_serializer.is_valid():
                     model_serializer.save()
                 else:
@@ -97,25 +90,20 @@ class ImportDataView(APIView):
 class ExportDataView(APIView):
     def get(self, request, *args, **kwargs):
         """Exports the data to a .csv file"""
-        # Create the HttpResponse object with CSV header.
         response = HttpResponse(content_type='text/csv')
         file_name = "export - logbook_template.csv"
         response['Content-Disposition'] = f"attachment; filename={file_name}"
 
-        # Create a CSV writer using the HttpResponse object as the "file"
         csv_writer = csv.writer(response)
-        # Write the title of the Logbook on the first line
         csv_writer.writerow(['ForeFlight Logbook Import'])
         csv_writer.writerow(['Aircraft Table'])
 
-        # Aircraft and Flight table titles and fields that will be exported
         header_title = ['AircraftID', 'Make', 'Model', 'Category',
                         'Class', 'Complex', 'HighPerf']
         header_row = ['guid', 'Make', 'Model', 'Category', 'Class',
                       'Complex', 'HighPerf']
         csv_writer.writerow(header_title)
 
-        # Query all models and write the data to the CSV file
         for aircraft in Aircraft.objects.all():
             csv_writer.writerow([getattr(aircraft, field)
                                  for field in header_row[0:7]])
@@ -126,9 +114,6 @@ class ExportDataView(APIView):
                         'Approach3', 'Person1', 'Person2']
         csv_writer.writerow(footer_title)
 
-        # Merges Flight, Airfield and Pilot data on Flight, key = "guid"
-        # Can be commented out after first run, if the data is persistent.
-        # It modifies the flight model
         Flight.objects.merge_pilot_airfield_data()
 
         for flight_instance in Flight.objects.all():
@@ -139,11 +124,9 @@ class ExportDataView(APIView):
             arr_time_utc = flight_instance.ArrTimeUTC
             min_total = flight_instance.minTOTAL
 
-            # Access related data
             airfield_data = flight_instance.airfield_data
             pilot_data = flight_instance.pilot_data
 
-            # Access fields from airfield_data
             if airfield_data:
                 af_name = airfield_data.AFName
                 city = airfield_data.City
@@ -151,7 +134,6 @@ class ExportDataView(APIView):
             else:
                 af_name = city = notes = None
 
-            # Access fields from pilot_data
             if pilot_data:
                 pilot_name = pilot_data.PilotName
                 pilot_email = pilot_data.PilotEMail
