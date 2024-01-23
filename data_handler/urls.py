@@ -1,13 +1,8 @@
-from django.urls import path, include
-from rest_framework import routers
-from .views import UserViewSet, AircraftViewSet, AircraftMetaViewSet
-
-router = routers.DefaultRouter()
-router.register(r'users', UserViewSet)
-router.register(r'aircraft', AircraftViewSet)
-router.register(r'aircraftmeta', AircraftMetaViewSet)
+from django.urls import path
+from .viewsets import ExportDataView, ImportDataView, import_view
 
 urlpatterns = [
-    # api paths
-    path('api/', include(router.urls)),
+    path('api/import/', ImportDataView.as_view(), name='import_data'),
+    path('api/export/', ExportDataView.as_view(), name='export_data'),
+    path('import/', import_view),
 ]

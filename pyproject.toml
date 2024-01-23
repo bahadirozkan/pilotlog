@@ -11,7 +11,9 @@ python = "^3.10"
 Django = "4.1.0"
 djangorestframework = "^3.14.0"
 psycopg2 = "2.9.9"
-django-import-export = "3.3.6"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.1.14"
 
 [build-system]
 requires = ["poetry-core"]
@@ -27,6 +29,20 @@ test = [
 [tool.ruff]
 line-length = 79
 fix = true
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
 
 # Exclude a variety of commonly ignored directories.
 exclude = [
