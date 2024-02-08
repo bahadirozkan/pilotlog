@@ -1,14 +1,15 @@
 from django.db import models
 
 
-# Base abstract model for keeping guid
 class BaseModel(models.Model):
+    """# Base abstract model for keeping guid"""
     guid = models.CharField(max_length=255, primary_key=True)
 
     class Meta:
         abstract = True
 
 class Aircraft(BaseModel):
+    """Aircraft model that inherits from BaseModel"""
     Make = models.CharField(max_length=255, blank=True)
     Model = models.CharField(max_length=255, blank=True)
     Category = models.CharField(max_length=255, blank=True)
@@ -19,12 +20,14 @@ class Aircraft(BaseModel):
     HighPerf = models.BooleanField(verbose_name="HighPerformance")
 
 class Pilot(BaseModel):
+    """Pilot model that inherits from BaseModel"""
     PilotName = models.CharField(max_length=255, verbose_name="Person1",
                                  blank=True)
     PilotEMail = models.CharField(max_length=255, verbose_name="Person2",
                                   blank=True)
 
 class Airfield(BaseModel):
+    """Airfield model that inherits from BaseModel"""
     AFName = models.CharField(max_length=255, verbose_name="Approach1")
     City = models.CharField(max_length=255, verbose_name="Approach2",
                             blank=True)
@@ -32,30 +35,47 @@ class Airfield(BaseModel):
                              blank=True)
 
 class FlightManager(models.Manager):
-    def merge_pilot_airfield_data(self):
-        # Iterate over all Flight instances
-        for flight in Flight.objects.all():
-            guid = flight.guid
+    """
+    Manager model to contain merge_pilot_airfield_data function
+    """
+    def merge_pilot_airfield_data(self) -> bool:
+        """
+        Merges Flight, Pilot and Airfield data on ID (guid)
+        Instances of Airfield and Pilot is much less than Flight.
+        For that reason first the instances of Airfield and Pilot are
+        retrieved and those ids are updated on Flight to merge.
 
-            try:
-                # Try to get corresponding Airfield instance
-                airfield_data = Airfield.objects.get(guid=guid)
-                flight.airfield_data = airfield_data
-            except Airfield.DoesNotExist:
-                pass
+        Return True is not strictly required. It's for testing.
+        """
 
+        # Retrieve all unique guids from Pilot and Airfield
+        all_guids = set(Pilot.objects.values_list('guid', flat=True)) | \
+                    set(Airfield.objects.values_list('guid', flat=True))
+
+        # Update Flight instances in bulk
+        for guid in all_guids:
             try:
-                # Try to get corresponding Pilot instance
                 pilot_data = Pilot.objects.get(guid=guid)
-                flight.pilot_data = pilot_data
             except Pilot.DoesNotExist:
-                pass
+                pilot_data = None
 
-            flight.save()
+            try:
+                airfield_data = Airfield.objects.get(guid=guid)
+            except Airfield.DoesNotExist:
+                airfield_data = None
 
-        return flight
+            Flight.objects.filter(guid=guid).update(
+                pilot_data=pilot_data,
+                airfield_data=airfield_data
+            )
+
+        return True
 
 class Flight(BaseModel):
+    """
+    Airfield model that inherits from BaseModel. Contains Flight Manager
+    to merge Flight data with Airfield and Pilot data.
+    """
     DateLOCAL = models.CharField(max_length=255, verbose_name="Date")
     Route = models.CharField(max_length=255, blank=True)
     DepTimeUTC = models.CharField(max_length=255, verbose_name="TimeOut")
