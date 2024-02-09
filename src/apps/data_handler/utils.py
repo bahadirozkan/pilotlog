@@ -1,5 +1,6 @@
 import json
 
+
 def process_json_data(file):
     """
     Read JSON data from file, remove double-escaping, and load the JSON data.
@@ -13,7 +14,8 @@ def process_json_data(file):
         for entry in data:
             # Lowercase the table value if it is in the allowed tables
             # merges i.e. Airfield and airfield
-            if entry.get('table') in ['Aircraft', 'Airfield', 'Flight', 'Pilot']:
+            if entry.get('table') in ['Aircraft', 'Airfield',
+                                      'Flight', 'Pilot']:
                 entry['table'] = entry['table'].lower()
 
             # Update each entry with its 'meta' field. Normalize the db
@@ -25,7 +27,8 @@ def process_json_data(file):
             entry.pop('_modified', None)
 
             # Filter out rows that aren't specified below
-            if entry.get('table') in ['aircraft', 'airfield', 'flight', 'pilot']:
+            if entry.get('table') in ['aircraft', 'airfield',
+                                      'flight', 'pilot']:
                 processed_data.append(entry)
 
         return processed_data

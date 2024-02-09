@@ -53,15 +53,21 @@ class ImportDataSerializer(serializers.Serializer):
             BaseModel: ['guid'],
             Pilot: ['PilotName', 'PilotEMail'],
             Airfield: ['AFName'], # 'City', 'Notes'
-            Aircraft: ['Make', 'Model', 'Category', 'Class', 'Complex', 'HighPerf'],
-            Flight: ['DateLOCAL', 'Route', 'DepTimeUTC', 'ArrTimeUTC', 'minTOTAL'],
+            Aircraft: ['Make', 'Model', 'Category', 'Class', 'Complex',
+                       'HighPerf'],
+            Flight: ['DateLOCAL', 'Route', 'DepTimeUTC', 'ArrTimeUTC',
+                     'minTOTAL'],
         }
 
         for model_class, entry in self.processed_data:
             required = required_fields.get(model_class, [])
-            missing_fields = [field for field in required if field not in entry.get('meta', {})]
+            missing_fields = [field for field in required
+                              if field not in entry.get('meta', {})]
             if missing_fields:
-                raise serializers.ValidationError(f"Missing required fields for {model_class.__name__}: {', '.join(missing_fields)}")
+                raise serializers.ValidationError(f"""Missing required fields
+                                                  for {model_class.__name__}:
+                                                  {', '.join(missing_fields)}
+                                                    """)
 
         return attrs
 

@@ -1,9 +1,10 @@
 import json
+
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
-from rest_framework.test import APIClient
 from rest_framework import status
-from django.core.files.uploadedfile import SimpleUploadedFile
+from rest_framework.test import APIClient
 
 
 class ImportDataSerializerTestCase(TestCase):
@@ -47,10 +48,13 @@ class ImportDataSerializerTestCase(TestCase):
             # Create a POST request with the file data
             url = reverse('import_data')
             client = APIClient()
-            response = client.post(url, {'file': SimpleUploadedFile('test_file.json', sample_data)})
+            response = client.post(url, {'file':
+                                         SimpleUploadedFile('test_file.json',
+                                                            sample_data)})
 
             # Assert response status code
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
             # Assert response message
-            self.assertEqual(response.data, {"message": "Imported data successfully."})
+            self.assertEqual(response.data, {"message":
+                                             "Imported data successfully."})
